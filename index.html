@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberBet — Кіберспортивний Хаб</title>
+    <title>CyberBet — LIVE Hub v4.0</title>
     <style>
         :root {
             --bg-main: #0b0c10;
@@ -19,7 +19,7 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: var(--bg-main); color: var(--text-light); font-family: var(--font); padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 20px; }
+        .container { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 20px; }
         header { text-align: center; padding: 10px 0; display: flex; flex-direction: column; gap: 5px; }
         header h1 { font-size: 2.2rem; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px var(--accent-neon); }
         .user-block { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 0.9rem; }
@@ -39,36 +39,46 @@
         .card { background: var(--bg-card); border: 1px solid var(--border-glow); border-radius: 12px; padding: 25px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); position: relative; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent-neon); }
         
+        /* П'єдестал */
+        .podium-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .podium-card { background: #151a22; border: 1px solid var(--border-glow); border-radius: 10px; padding: 15px; text-align: center; position: relative; border-top: 4px solid var(--text-gray); }
+        .podium-card.place-1 { border-top-color: var(--accent-gold); box-shadow: 0 0 15px rgba(255, 215, 0, 0.15); }
+        .podium-card.place-2 { border-top-color: #c0c0c0; }
+        .podium-card.place-3 { border-top-color: #cd7f32; }
+        .podium-badge { font-weight: bold; font-size: 0.8rem; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+        .place-1 .podium-badge { background: rgba(255, 215, 0, 0.1); color: var(--accent-gold); }
+        .place-2 .podium-badge { background: rgba(192, 192, 192, 0.1); color: #c0c0c0; }
+        .place-3 .podium-badge { background: rgba(205, 127, 50, 0.1); color: #cd7f32; }
+
+        /* Розширена таблиця */
         .leaderboard-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .leaderboard-table th, .leaderboard-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .leaderboard-table th { color: var(--text-gray); font-size: 0.85rem; text-transform: uppercase; }
-        .rank { font-weight: bold; width: 50px; }
-        tr:nth-child(1) .rank { color: #ffd700; text-shadow: 0 0 8px #ffd700; }
-        tr:nth-child(2) .rank { color: #c0c0c0; text-shadow: 0 0 8px #c0c0c0; }
-        tr:nth-child(3) .rank { color: #cd7f32; text-shadow: 0 0 8px #cd7f32; }
-        .nickname { font-weight: 600; }
-        .current-balance { font-weight: bold; color: var(--accent-green); }
+        .leaderboard-table th, .leaderboard-table td { padding: 12px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.95rem; }
+        .leaderboard-table th { color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        .rank { font-weight: bold; width: 40px; }
+        .nickname-cell { display: flex; flex-direction: column; gap: 2px; }
+        .player-tag { font-size: 0.75rem; color: var(--text-gray); }
+        .award-badge { font-size: 0.8rem; color: var(--accent-gold); font-weight: 500; margin-top: 3px; }
+        .streak-fire { color: #ff6b00; font-weight: bold; text-shadow: 0 0 8px rgba(255,107,0,0.4); }
+        .kd-high { color: var(--accent-green); font-weight: bold; }
+        .kd-low { color: var(--text-gray); }
 
-        .mix-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
-        .mix-team-card { background: #151a22; border: 1px solid var(--border-glow); border-radius: 10px; padding: 15px; }
-        .mix-team-title { font-size: 1rem; font-weight: bold; color: var(--accent-green); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 10px; }
-        .mix-player-row { padding: 6px 0; color: #b5c2d5; font-size: 0.95rem; }
-        .mix-captain { color: var(--accent-gold); font-weight: bold; }
-
-        .sched-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px 0; font-size: 1rem; }
-        .sched-time { color: var(--accent-gold); font-weight: bold; margin-right: 10px; }
-
-        .bet-match-box { background: #151a22; border: 1px solid var(--border-glow); border-radius: 12px; padding: 20px; text-align: center; margin-top: 15px; }
-        .bet-teams { display: flex; justify-content: center; align-items: center; gap: 30px; margin: 20px 0; font-size: 1.3rem; font-weight: bold; }
-        .bet-vs { color: var(--accent-neon); font-size: 0.9rem; background: rgba(163, 112, 247, 0.1); padding: 5px 10px; border-radius: 6px; }
-        .bet-form { display: flex; flex-direction: column; gap: 15px; max-width: 400px; margin: 0 auto; }
-        select, input[type="number"], input[type="password"] { background: #0b0c10; border: 1px solid var(--border-glow); color: #fff; padding: 12px; border-radius: 8px; font-size: 1rem; outline: none; text-align: center; }
-        .btn-action { background: var(--accent-green); color: #000; border: none; padding: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-size: 0.95rem; transition: 0.2s; }
-        .btn-action:hover { opacity: 0.9; }
+        /* Історія матчів */
+        .match-card { background: #151a22; border: 1px solid var(--border-glow); border-radius: 10px; padding: 18px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .match-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; font-size: 0.85rem; color: var(--text-gray); }
+        .match-map { color: var(--accent-gold); font-weight: bold; text-transform: uppercase; background: rgba(255,215,0,0.05); padding: 2px 6px; border-radius: 4px; }
+        .match-scoreboard { display: flex; justify-content: center; align-items: center; gap: 20px; font-size: 1.4rem; font-weight: bold; padding: 10px 0; }
+        .team-display { flex: 1; text-align: center; font-size: 1.1rem; }
+        .team-1-side { text-align: right; color: var(--accent-green); }
+        .team-2-side { text-align: left; color: #ff5555; }
+        .match-score-center { background: var(--bg-main); padding: 6px 16px; border-radius: 8px; border: 1px solid var(--border-glow); font-size: 1.3rem; letter-spacing: 2px; }
+        .match-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.85rem; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 6px; }
+        .match-player-line { display: flex; justify-content: space-between; padding: 3px 0; color: #b5c2d5; }
 
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .auth-card { background: var(--bg-card); border: 2px solid var(--accent-neon); padding: 30px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%; }
         .loading { text-align: center; color: var(--text-gray); padding: 20px; }
+        .btn-action { background: var(--accent-green); color: #000; border: none; padding: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-size: 0.95rem; transition: 0.2s; }
+        select, input[type="password"] { background: #0b0c10; border: 1px solid var(--border-glow); color: #fff; padding: 12px; border-radius: 8px; font-size: 1rem; outline: none; text-align: center; }
     </style>
 </head>
 <body>
@@ -77,17 +87,16 @@
     <div id="auth-modal" class="auth-overlay" style="display: none;">
         <div class="auth-card">
             <h2 style="color: var(--accent-green); margin-bottom: 10px;">👋 АВТОРЫЗАЦІЯ</h2>
-            <p style="color: var(--text-gray); font-size: 0.95rem; margin-bottom: 20px;">Вибери свій нік та введи 4-значний ПІН.</p>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
                 <select id="auth-user-select">
                     <option value="oleksandr">Олександр</option>
-                    <option value="bodya">Бодя</option>
-                    <option value="makaron">Макарон</option>
                     <option value="kolya">Микола</option>
+                    <option value="bodya">Бодя</option>
                     <option value="zinko">Зінько</option>
-                    <option value="valik">Валік</option>
                     <option value="dzhogolyk">Джоголик</option>
-                    <option value="lyutyy">Лютий</option>
+                    <option value="mute_traktor">MUTE_traktor</option>
+                    <option value="mute_kosachi">MUTE_kosachi</option>
+                    <option value="misko">Місько</option>
                 </select>
                 <input type="password" id="auth-pin-input" placeholder="Введи свій ПІН-код" maxlength="4">
                 <button class="btn-action" onclick="saveProfile()">Увійти в хаб</button>
@@ -97,7 +106,7 @@
 
     <div class="container">
         <header>
-            <h1>CyberBet — LIVE Hub v3.7</h1>
+            <h1>CyberBet — LIVE Hub v4.0</h1>
             <div class="user-block">
                 <div class="user-status" id="user-display-status">Авторизація...</div>
                 <button id="btn-logout" style="background:none; border:none; color:var(--accent-red); cursor:pointer; font-weight:bold; font-size:0.85rem; display:none;" onclick="logout()">[Вийти]</button>
@@ -105,83 +114,55 @@
         </header>
 
         <div class="tabs-nav">
-            <button class="tab-btn active" onclick="openTab(event, 'leaderboard')">🏆 Таблиця PTS</button>
-            <button class="tab-btn" onclick="openTab(event, 'mix-tab')">⚔️ Склади Команд</button>
-            <button class="tab-btn" onclick="openTab(event, 'schedule-tab')">📋 Розклад ігор</button>
-            <button class="tab-btn" onclick="openTab(event, 'bets-tab')">🎲 LIVE Ставки</button>
+            <button class="tab-btn active" onclick="openTab(event, 'leaderboard')">🏆 Підсумки та Статистика</button>
+            <button class="tab-btn" onclick="openTab(event, 'history-tab')">📜 Історія матчів</button>
         </div>
 
-        <div id="leaderboard" class="tab-content active card">
-            <div id="loading-1" class="loading">Завантаження балансів...</div>
-            <table class="leaderboard-table" id="pts-table" style="display: none;">
-                <thead>
-                    <tr>
-                        <th class="rank">#</th>
-                        <th>Гравець</th>
-                        <th>Старт</th>
-                        <th style="text-align: right;">Баланс</th>
-                    </tr>
-                </thead>
-                <tbody id="pts-body"></tbody>
-            </table>
-        </div>
-
-        <div id="mix-tab" class="tab-content card">
-            <h2>⚔️ Бойові склади команд на сьогодні</h2>
-            <div id="mix-loading" class="loading">Очікування команд...</div>
-            <div class="mix-container" id="mix-teams-output"></div>
-        </div>
-
-        <div id="schedule-tab" class="tab-content card">
-            <h2>📋 Розклад сьогоднішнього турніру</h2>
-            <p style="color: var(--text-gray); margin-bottom: 15px; font-size: 0.9rem;">⚠️ Особлива система: Джокер + Дуель 1в1</p>
+        <!-- Головна вкладка: П'єдестал та Розширена статистика -->
+        <div id="leaderboard" class="tab-content active">
             
-            <div class="sched-item"><span class="sched-time">18:00</span> <b>Матч №1:</b> Команда 1 (Олександр + Коля) ⚔️ Команда 2 (Валік + Макарон)</div>
-            <div class="sched-item"><span class="sched-time">18:00</span> <b>Матч №2:</b> Команда 3 (Бодя + Джоголик) ⚔️ Команда 4 (Олександр + Зінько)</div>
-            <div class="sched-item"><span class="sched-time">18:30</span> <b>Матч №3 (Нижня сітка):</b> Програв у Матчі №1 ⚔️ Програв у Матчі №2 <span style="color:var(--accent-red); font-size:0.85rem;">(Програв — вилітає)</span></div>
-            
-            <div class="sched-item" style="background: rgba(163, 112, 247, 0.08); padding: 12px; border-radius: 8px; border-left: 4px solid var(--accent-neon); margin: 10px 0;">
-                <span class="sched-time">19:00</span> <b>Матч №4 (Дуель 1в1 на Aim_map):</b> Макарон ⚔️ Бодя
-                <div style="font-size: 0.85rem; color: var(--text-gray); margin-top: 4px;">* Олександр виходить із Команди 4. Переможець дуелі заходить другого фіналіста (до Зінька), а той, хто програв — займає 3-тє місце.</div>
+            <!-- П'єдестал Чемпіонів -->
+            <div class="podium-container" id="podium-output">
+                <!-- Дані завантажуються динамічно -->
             </div>
-            
-            <div class="sched-item"><span class="sched-time">19:30</span> <b>Матч №5 (Гранд-Фінал):</b> Команда 1 (Олександр + Коля) ⚔️ Зінько + [Переможець дуелі] <span style="color:var(--accent-green); font-size:0.85rem;">(Битва за 1-ше та 2-ге місце)</span></div>
-        </div>
 
-        <div id="bets-tab" class="tab-content card">
-            <h2>🎲 Кімната LIVE Ставок</h2>
-            <div id="active-match-loading" class="loading">Перевірка ліній ставок...</div>
-            
-            <div id="active-match-box" class="bet-match-box" style="display: none;">
-                <span style="color: #ffd700; font-weight: bold; font-size: 0.85rem; text-transform: uppercase;">🔥 МАТЧ ВІДКРИТИЙ ДЛЯ СТАВОК</span>
-                <div style="color: var(--accent-green); font-weight: bold; margin-top: 4px; font-size: 1rem; letter-spacing: 1px;">КОЕФІЦІЄНТ: Х2.0 (ФІКСОВАНИЙ)</div>
-                
-                <div class="bet-teams">
-                    <span id="b-team1-name" style="color: var(--accent-green);">-</span>
-                    <span class="bet-vs">VS</span>
-                    <span id="b-team2-name" style="color: #ff5555;">-</span>
-                </div>
-
-                <div class="bet-form" id="bet-action-form">
-                    <select id="bet-predicted-winner">
-                        <option value="team1" id="opt-team1">Команда 1</option>
-                        <option value="team2" id="opt-team2">Команда 2</option>
-                    </select>
-
-                    <input type="number" id="bet-amount-input" placeholder="Сума ставки (PTS)" min="1">
-                    <button class="btn-action" onclick="placeBet()">Зробити ставку</button>
-                    <p id="bet-status-msg" style="font-weight: bold; margin-top: 5px; font-size: 0.95rem;"></p>
+            <!-- Глобальна таблиця лідерів -->
+            <div class="card">
+                <h2 style="margin-bottom: 15px; font-size: 1.2rem;">📊 Глобальна статистика гравців (За підсумками турніру)</h2>
+                <div id="loading-1" class="loading">Завантаження профілів...</div>
+                <div style="overflow-x: auto;">
+                    <table class="leaderboard-table" id="pts-table" style="display: none; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th class="rank">#</th>
+                                <th>Гравець</th>
+                                <th>K / D / A</th>
+                                <th>K/D</th>
+                                <th>KPR</th>
+                                <th>Вінстрік</th>
+                                <th style="text-align: right;">Баланс</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pts-body"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
+
+        <!-- Нова вкладка: Історія матчів -->
+        <div id="history-tab" class="tab-content card">
+            <h2>📜 Офіційні картки матчів турніру</h2>
+            <p style="color: var(--text-gray); margin-bottom: 20px; font-size: 0.9rem;">Логи матчів синхронізовано з ігровою платформою.</p>
+            <div id="match-history-output">
+                <div class="loading">Завантаження історії ігор...</div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         const BASE_URL = 'https://admin67abemo-default-rtdb.europe-west1.firebasedatabase.app';
-        const FIREBASE_URL = BASE_URL + '/.json';
-
         let myPlayerId = localStorage.getItem('cyberbet_player_id');
-        let myCurrentBalance = 0;
 
         if(!myPlayerId) {
             document.getElementById('auth-modal').style.display = 'flex';
@@ -203,9 +184,7 @@
                         localStorage.setItem('cyberbet_player_pin', pin);
                         myPlayerId = selected;
                         document.getElementById('auth-modal').style.display = 'none';
-                        document.getElementById('user-display-status').textContent = `Мій профіль: ${myPlayerId.toUpperCase()}`;
-                        document.getElementById('btn-logout').style.display = 'inline';
-                        updateHubData();
+                        location.reload();
                     } else {
                         alert("❌ Невірний ПІН-код!");
                     }
@@ -224,88 +203,122 @@
             if(evt) evt.currentTarget.classList.add('active');
         }
 
-        function placeBet() {
-            if(!myPlayerId) return;
-            const amount = parseInt(document.getElementById('bet-amount-input').value, 10);
-            const team = document.getElementById('bet-predicted-winner').value;
-            const statusMsg = document.getElementById('bet-status-msg');
-            const savedPin = localStorage.getItem('cyberbet_player_pin');
-
-            if(isNaN(amount) || amount <= 0) {
-                statusMsg.textContent = "❌ Введіть коректну суму!";
-                statusMsg.style.color = '#ff5555'; return;
-            }
-            if(amount > myCurrentBalance) {
-                statusMsg.textContent = `❌ Недостатньо PTS! Баланс: ${myCurrentBalance}`;
-                statusMsg.style.color = '#ff5555'; return;
-            }
-
-            fetch(`${BASE_URL}/players/${myPlayerId}.json`)
-                .then(res => res.json())
-                .then(p => {
-                    if(!p || p.pin !== savedPin) {
-                        alert("❌ Помилка безпеки!"); logout(); return;
-                    }
-                    const betObj = { player_id: myPlayerId, team: team, amount: amount };
-                    return fetch(`${BASE_URL}/active_match/bets/${myPlayerId}.json`, { method: 'PUT', body: JSON.stringify(betObj) });
-                }).then(() => { updateHubData(); });
-        }
-
         function updateHubData() {
-            fetch(FIREBASE_URL).then(res => res.json()).then(root => {
-                if (!root || !root.players) return;
-                const data = root.players;
-                if(data[myPlayerId]) myCurrentBalance = data[myPlayerId].current || 0;
+            fetch(`${BASE_URL}/.json`).then(res => res.json()).then(root => {
+                if (!root) return;
 
-                let playersArray = Object.keys(data).map(key => data[key]);
-                let ptsArray = [...playersArray].sort((a, b) => b.current - a.current);
-                const ptsBody = document.getElementById('pts-body'); ptsBody.innerHTML = '';
-                ptsArray.forEach((player, index) => {
-                    ptsBody.innerHTML += `<tr><td class="rank">${index + 1}</td><td class="nickname">${player.name}</td><td style="color:#7a889b;">${player.start}</td><td class="current-balance" style="text-align: right;">${player.current} PTS</td></tr>`;
-                });
-                document.getElementById('loading-1').style.display = 'none';
-                document.getElementById('pts-table').style.display = 'table';
-
-                // Мікси
-                const output = document.getElementById('mix-teams-output');
-                const loader = document.getElementById('mix-loading');
-                if(!root.current_mix || !root.current_mix.teams) {
-                    output.innerHTML = ''; loader.style.display = 'block';
-                } else {
-                    loader.style.display = 'none'; output.innerHTML = '';
-                    root.current_mix.teams.forEach((team, idx) => {
-                        let rows = ''; team.players.forEach(p => { rows += `<div class="mix-player-row"><span class="${p.isCaptain ? 'mix-captain' : ''}">${p.name}</span></div>`; });
-                        output.innerHTML += `<div class="mix-team-card"><div class="mix-team-title">КОМАНДА ${idx + 1}</div>${rows}</div>`;
-                    });
+                // Заповнення П'єдесталу
+                const podiumOut = document.getElementById('podium-output');
+                if(root.tournament_results) {
+                    const resData = root.tournament_results;
+                    podiumOut.innerHTML = `
+                        <div class="podium-card place-1">
+                            <div class="podium-badge">🥇 1 Місце (Champions)</div>
+                            <h3>${resData.place1.teams}</h3>
+                            <p style="color: var(--accent-green); font-size: 0.85rem; margin-top: 5px;">${resData.place1.stats}</p>
+                        </div>
+                        <div class="podium-card place-2">
+                            <div class="podium-badge">🥈 2 Місце (Finalists)</div>
+                            <h3>${resData.place2.teams}</h3>
+                            <p style="color: var(--text-gray); font-size: 0.85rem; margin-top: 5px;">${resData.place2.stats}</p>
+                        </div>
+                        <div class="podium-card place-3">
+                            <div class="podium-badge">🥉 3 Місце</div>
+                            <h3>${resData.place3.teams}</h3>
+                            <p style="color: var(--accent-red); font-size: 0.85rem; margin-top: 5px;">${resData.place3.stats}</p>
+                        </div>
+                    `;
                 }
 
-                // Ставки
-                const bLoader = document.getElementById('active-match-loading');
-                const bBox = document.getElementById('active-match-box');
-                if(!root.active_match || !root.active_match.active) {
-                    bLoader.textContent = "Немає відкритих ліній для ставок. Чекайте Овнера ⏳"; bBox.style.display = 'none';
-                } else {
-                    bLoader.style.display = 'none'; bBox.style.display = 'block';
-                    document.getElementById('b-team1-name').textContent = root.active_match.team1;
-                    document.getElementById('b-team2-name').textContent = root.active_match.team2;
-                    document.getElementById('opt-team1').textContent = root.active_match.team1;
-                    document.getElementById('opt-team2').textContent = root.active_match.team2;
+                // Заповнення Таблиці Лідерів
+                if(root.players) {
+                    const data = root.players;
+                    let playersArray = Object.keys(data).map(key => data[key]);
+                    // Сортуємо за балансом PTS
+                    let ptsArray = [...playersArray].sort((a, b) => (b.current || 0) - (a.current || 0));
+                    
+                    const ptsBody = document.getElementById('pts-body'); 
+                    ptsBody.innerHTML = '';
+                    
+                    ptsArray.forEach((player, index) => {
+                        const streakHtml = player.win_streak > 0 ? `<span class="streak-fire">🔥 ${player.win_streak}</span>` : `<span style="color:var(--text-gray);">0</span>`;
+                        const kdClass = (player.kd_ratio || 0) >= 1.0 ? 'kd-high' : 'kd-low';
+                        const awardHtml = player.status_award ? `<div class="award-badge">${player.status_award}</div>` : '';
+                        const kdaText = `${player.total_kills || 0} / ${player.total_deaths || 0} / ${player.total_assists || 0}`;
+                        const kprText = player.kpr ? player.kpr : '-';
 
-                    const sMsg = document.getElementById('bet-status-msg');
-                    if(root.active_match.bets && root.active_match.bets[myPlayerId]) {
-                        const myBet = root.active_match.bets[myPlayerId];
-                        sMsg.textContent = `✅ Ставка: ${myBet.amount} PTS на [ ${myBet.team === 'team1' ? root.active_match.team1 : root.active_match.team2} ]`;
-                        sMsg.style.color = 'var(--accent-green)';
-                        document.getElementById('bet-action-form').style.opacity = '0.5';
-                        document.getElementById('bet-amount-input').disabled = true;
-                    } else {
-                        sMsg.textContent = ''; document.getElementById('bet-action-form').style.opacity = '1';
-                        document.getElementById('bet-amount-input').disabled = false;
-                    }
+                        ptsBody.innerHTML += `
+                            <tr>
+                                <td class="rank">${index + 1}</td>
+                                <td>
+                                    <div class="nickname-cell">
+                                        <span style="font-weight:600; color:#fff;">${player.name}</span>
+                                        <span class="player-tag">@${player.username || 'user'}</span>
+                                        ${awardHtml}
+                                    </div>
+                                </td>
+                                <td style="color:#b5c2d5; font-family:monospace;">${kdaText}</td>
+                                <td class="${kdClass}">${(player.kd_ratio || 0).toFixed(2)}</td>
+                                <td style="color:var(--text-gray); font-family:monospace;">${kprText}</td>
+                                <td>${streakHtml}</td>
+                                <td style="text-align: right; font-weight: bold; color: var(--accent-green);">${player.current || 0} PTS</td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById('loading-1').style.display = 'none';
+                    document.getElementById('pts-table').style.display = 'table';
+                }
+
+                // Заповнення Історії Матчів
+                const historyOut = document.getElementById('match-history-output');
+                if(root.match_history) {
+                    historyOut.innerHTML = '';
+                    Object.keys(root.match_history).forEach(mKey => {
+                        const m = root.match_history[mKey];
+                        
+                        let t1PlayersHtml = '';
+                        m.team1_stats.forEach(p => {
+                            t1PlayersHtml += `<div class="match-player-line"><span>${p.name}</span> <b>${p.kda}</b></div>`;
+                        });
+
+                        let t2PlayersHtml = '';
+                        m.team2_stats.forEach(p => {
+                            t2PlayersHtml += `<div class="match-player-line"><span>${p.name}</span> <b>${p.kda}</b></div>`;
+                        });
+
+                        historyOut.innerHTML += `
+                            <div class="match-card">
+                                <div class="match-header">
+                                    <span>🆔 ${m.match_id}</span>
+                                    <span class="match-map">🗺️ ${m.map}</span>
+                                    <span>${m.time}</span>
+                                </div>
+                                <div class="match-scoreboard">
+                                    <div class="team-display team-1-side">${m.team1_name}</div>
+                                    <div class="match-score-center">${m.score}</div>
+                                    <div class="team-display team-2-side">${m.team2_name}</div>
+                                </div>
+                                <div class="match-stats-grid">
+                                    <div>
+                                        <div style="color:var(--accent-green); font-weight:bold; margin-bottom:5px; font-size:0.75rem; text-transform:uppercase;">Статистика лівої тіми:</div>
+                                        ${t1PlayersHtml}
+                                    </div>
+                                    <div>
+                                        <div style="color:#ff4a4a; font-weight:bold; margin-bottom:5px; font-size:0.75rem; text-transform:uppercase;">Статистика правої тіми:</div>
+                                        ${t2PlayersHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    historyOut.innerHTML = '<div class="loading">Історія матчів пуста. Залий результати через адмінку!</div>';
                 }
             });
         }
-        updateHubData(); setInterval(updateHubData, 3000);
+
+        updateHubData();
+        setInterval(updateHubData, 4000);
     </script>
 </body>
 </html>
