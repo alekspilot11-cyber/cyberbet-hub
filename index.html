@@ -12,7 +12,7 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: var(--bg-main); color: var(--text-light); font-family: var(--font); padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
+        .container { width: 100%; max-width: 950px; display: flex; flex-direction: column; gap: 20px; }
         header { text-align: center; padding: 10px 0; display: flex; flex-direction: column; gap: 5px; }
         header h1 { font-size: 1.8rem; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px var(--accent-neon); }
         .user-block { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--accent-green); font-weight: bold; }
@@ -35,13 +35,17 @@
         .btn-red { background: var(--accent-red); color: #fff; }
         .btn-red:hover { background: #cc3333; }
 
-        .bracket-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-        .match-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border-glow); font-size: 0.95rem; }
-        .match-status { font-size: 0.75rem; padding: 3px 6px; border-radius: 4px; font-weight: bold; }
+        /* Прокачана кіберспортивна сітка в колонки */
+        .bracket-grid { display: flex; gap: 20px; margin-top: 15px; overflow-x: auto; padding-bottom: 15px; align-items: flex-start; }
+        .bracket-column { display: flex; flex-direction: column; gap: 12px; flex: 1; min-width: 260px; background: rgba(0,0,0,0.15); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.02); }
+        .column-title { font-size: 0.75rem; text-transform: uppercase; color: var(--accent-neon); font-weight: bold; margin-bottom: 4px; text-align: center; letter-spacing: 1px; border-bottom: 1px solid var(--border-glow); padding-bottom: 6px; }
+        .match-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid var(--border-glow); font-size: 0.9rem; transition: 0.2s; }
+        .match-row:hover { border-color: var(--accent-green); box-shadow: 0 0 10px rgba(0, 255, 204, 0.1); }
+        .match-status { font-size: 0.7rem; padding: 3px 6px; border-radius: 4px; font-weight: bold; text-align: center; }
         .status-waiting { background: #3a4750; color: #ccc; }
         .status-live { background: var(--accent-green); color: #000; animation: blink 1.5s infinite; }
         .status-done { background: var(--accent-neon); color: #fff; }
-        .match-score { font-family: monospace; font-weight: bold; color: var(--accent-gold); font-size: 1.1rem; }
+        .match-score { font-family: monospace; font-weight: bold; color: var(--accent-gold); font-size: 1.1rem; text-align: right; }
 
         .leaderboard-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
         .leaderboard-table th, .leaderboard-table td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
@@ -124,7 +128,6 @@
         let myPlayerId = localStorage.getItem('cyberbet_player_id');
         let lastBetZoneState = ""; 
 
-        // Додано точні КД на основі статистики зі скріншотів Faceit
         const playerTiers = {
             "oleksandr": { label: "Tier-S Фаворит", color: "#ffd700", kd: "3.00" },
             "makaron": { label: "Tier-A Топ-2", color: "#a370f7", kd: "1.31" },
@@ -282,26 +285,45 @@
                     lastBetZoneState = "";
                 }
 
-                // СІТКА ТУРНІРУ
+                // СІТКА ТУРНІРУ (АВТОМАТИЧНІ КОЛОНКИ ЗА СТАДІЯМИ З БАЗИ ДАНИХ)
                 if(data.bracket) {
                     document.getElementById('bracket-type-title').textContent = data.bracket.type === '7players' ? '7 гравців' : '8 гравців з Міськом';
                     const box = document.getElementById('bracket-matches-box'); box.innerHTML = '';
+                    
                     if(data.bracket.matches) {
+                        // 1. Групуємо всі матчі з бази за значенням m.stage
+                        const stages = {};
                         data.bracket.matches.forEach(m => {
-                            let statusClass = 'status-waiting', statusText = 'Очікує';
-                            if(m.status === 'live') { statusClass = 'status-live'; statusText = 'ГРАЄТЬСЯ'; }
-                            if(m.status === 'done') { statusClass = 'status-done'; statusText = 'ЗАВЕРШЕНО'; }
-                            box.innerHTML += `
-                                <div class="match-row">
-                                    <div style="display:flex; flex-direction:column; gap:3px;">
-                                        <span style="font-size:0.75rem; color:var(--text-gray); font-weight:bold;">${m.stage}</span>
-                                        <span><b>${m.t1}</b> vs <b>${m.t2}</b></span>
-                                    </div>
-                                    <div style="display:flex; align-items:center; gap:15px;">
-                                        <span class="match-score">${m.score || '0 : 0'}</span>
-                                        <span class="match-status ${statusClass}">${statusText}</span>
-                                    </div>
-                                </div>`;
+                            const stageName = m.stage || "Раунд";
+                            if(!stages[stageName]) stages[stageName] = [];
+                            stages[stageName].push(m);
+                        });
+
+                        // 2. Для кожної стадії генеруємо окрему широку колонку
+                        Object.keys(stages).forEach(stageName => {
+                            let columnHtml = `<div class="bracket-column"><div class="column-title">${stageName}</div>`;
+                            
+                            stages[stageName].forEach(m => {
+                                let statusClass = 'status-waiting', statusText = 'Очікує';
+                                if(m.status === 'live') { statusClass = 'status-live'; statusText = 'ГРАЄТЬСЯ'; }
+                                if(m.status === 'done') { statusClass = 'status-done'; statusText = 'ЗАВЕРШЕНО'; }
+                                
+                                columnHtml += `
+                                    <div class="match-row">
+                                        <div style="display:flex; flex-direction:column; gap:4px; max-width:70%;">
+                                            <span style="font-size:0.85rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.t1 || '???'}</span>
+                                            <span style="font-size:0.65rem; color:var(--text-gray); font-weight:bold; padding-left:2px;">vs</span>
+                                            <span style="font-size:0.85rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.t2 || '???'}</span>
+                                        </div>
+                                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                                            <span class="match-score">${m.score || '0 : 0'}</span>
+                                            <span class="match-status ${statusClass}">${statusText}</span>
+                                        </div>
+                                    </div>`;
+                            });
+                            
+                            columnHtml += `</div>`;
+                            box.innerHTML += columnHtml;
                         });
                     }
                 }
