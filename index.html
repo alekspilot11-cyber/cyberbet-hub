@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberBet — Турнірний LIVE Хаб</title>
+    <title>CyberBet — LIVE Хаб</title>
     <style>
         :root {
             --bg-main: #0b0c10; --bg-card: #1f2833; --text-light: #ffffff; --text-gray: #8b9bb4;
@@ -17,6 +17,9 @@
         header h1 { font-size: 1.8rem; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px var(--accent-neon); }
         .user-block { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--accent-green); font-weight: bold; }
         
+        /* РЯДОК ОГОЛОШЕНЬ */
+        .ticker-box { background: #151a22; border: 1px dashed var(--accent-neon); padding: 10px; text-align: center; border-radius: 8px; font-weight: bold; color: var(--accent-gold); display: none; box-shadow: 0 0 10px rgba(163, 112, 247, 0.2); }
+
         .card { background: var(--bg-card); border: 1px solid var(--border-glow); border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); position: relative; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent-neon); }
         
@@ -41,6 +44,7 @@
         .leaderboard-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
         .leaderboard-table th, .leaderboard-table td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .leaderboard-table th { color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase; }
+        .tier-badge { font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-left: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -59,6 +63,9 @@
             <h1>CyberBet — LIVE Хаб</h1>
             <div class="user-block" id="user-display-status">Завантаження профілю...</div>
         </header>
+
+        <!-- LIVE ОГОЛОШЕННЯ ВІД ОВНЕРА -->
+        <div class="ticker-box" id="announcement-ticker">📢 <span id="ticker-text">...</span></div>
 
         <!-- LIVE МАТЧ СТАВКИ -->
         <div id="live-match-container" style="display: none;">
@@ -106,6 +113,18 @@
         const BASE_URL = 'https://admin67abemo-default-rtdb.europe-west1.firebasedatabase.app';
         let myPlayerId = localStorage.getItem('cyberbet_player_id');
 
+        // Мапа Тірів для красивого рендеру
+        const playerTiers = {
+            "oleksandr": { label: "Tier-S Фаворит", color: "#ffd700" },
+            "makaron": { label: "Tier-A Топ-2", color: "#a370f7" },
+            "valik": { label: "Tier-A Топ-2", color: "#a370f7" },
+            "zinko": { label: "Tier-B Спец", color: "#00ffcc" },
+            "misko": { label: "Tier-B Гуд", color: "#00ffcc" },
+            "kolya": { label: "Tier-C Рандом", color: "#ff6b00" },
+            "bodya": { label: "Tier-C Рандом", color: "#ff6b00" },
+            "dzhogolyk": { label: "Tier-D Нуб", color: "#ff4a4a" }
+        };
+
         function saveProfile() {
             const selected = document.getElementById('auth-user-select').value;
             const pin = document.getElementById('auth-pin-input').value.trim();
@@ -130,11 +149,17 @@
                 }
                 document.getElementById('user-display-status').textContent = `Мій акаунт: ${data.players[myPlayerId]?.name || myPlayerId}`;
 
+                // Рядок оголошень
+                if(data.announcement && data.announcement.trim() !== "") {
+                    document.getElementById('announcement-ticker').style.display = 'block';
+                    document.getElementById('ticker-text').textContent = data.announcement;
+                } else { document.getElementById('announcement-ticker').style.display = 'none'; }
+
                 // LIVE Матч
                 if(data.active_match && data.active_match.active) {
                     document.getElementById('live-match-container').style.display = 'block';
                     document.getElementById('live-map').textContent = data.active_match.map;
-                    document.getElementById('live-t1-name').textContent = data.active_match.team1;
+                    document.getElementById('live-team1-name' ? 'live-t1-name' : 'live-t1-name').textContent = data.active_match.team1;
                     document.getElementById('live-t2-name').textContent = data.active_match.team2;
                     document.getElementById('live-t1-odds').textContent = `x${data.active_match.team1_odds}`;
                     document.getElementById('live-t2-odds').textContent = `x${data.active_match.team2_odds}`;
@@ -165,11 +190,22 @@
                     });
                 }
 
-                // Таблиця лідерів
+                // Таблиця лідерів з Тірами
                 if(data.players) {
                     const tbody = document.getElementById('pts-body'); tbody.innerHTML = '';
+                    Object.keys(data.players).forEach(k => { data.players[k].id = k; });
                     Object.keys(data.players).map(k => data.players[k]).sort((a,b) => b.current - a.current).forEach((p, i) => {
-                        tbody.innerHTML += `<tr><td>${i+1}</td><td><b>${p.name}</b><br><span style="font-size:0.75rem;color:var(--text-gray)">@${p.username}</span></td><td style="text-align:right; font-weight:bold; color:var(--accent-green)">${p.current} PTS</td></tr>`;
+                        const tier = playerTiers[p.id] || { label: "Tier-C", color: "#ccc" };
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${i+1}</td>
+                                <td>
+                                    <b>${p.name}</b>
+                                    <span class="tier-badge" style="background: ${tier.color}; color: #000;">${tier.label}</span>
+                                    <br><span style="font-size:0.75rem;color:var(--text-gray)">@${p.username}</span>
+                                </td>
+                                <td style="text-align:right; font-weight:bold; color:var(--accent-green)">${p.current} PTS</td>
+                            </tr>`;
                     });
                 }
             });
