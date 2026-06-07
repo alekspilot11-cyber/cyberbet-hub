@@ -72,7 +72,6 @@
 
         <div class="ticker-box" id="announcement-ticker">📢 <span id="ticker-text">...</span></div>
 
-        <!-- КАРТКА ПОТОЧНОГО LIVE МАТЧУ -->
         <div id="live-match-container" style="display: none;">
             <div class="live-match-box">
                 <span class="live-badge" id="live-badge-status">🔴 LIVE МАТЧ — СТАВКИ ВІДКРИТО</span>
@@ -90,10 +89,8 @@
                     </div>
                 </div>
                 
-                <!-- ЗОНА ДЛЯ ВВЕДЕННЯ СТАВКИ (КНОПКИ ТА ПОЛЯ) -->
                 <div id="betting-form-zone" style="margin-top: 15px; border-top: 1px solid var(--border-glow); padding-top: 15px;"></div>
                 
-                <!-- МОНІТОР ВСІХ СТАВКИ ТУРНІРУ -->
                 <div class="bets-monitor">
                     <div style="font-weight:bold; color:var(--accent-gold); font-size:0.9rem; text-align:center; margin-bottom:8px; text-transform:uppercase;">📊 Всі ставки пацанів на цей матч:</div>
                     <div id="public-bets-list">Ставок немає. Спробуй поставити першим!</div>
@@ -101,13 +98,11 @@
             </div>
         </div>
 
-        <!-- СІТКА ТУРНІРУ -->
         <div class="card">
             <h2>📋 Розклад та статус матчів (<span id="bracket-type-title">Завантаження...</span>)</h2>
             <div class="bracket-grid" id="bracket-matches-box"></div>
         </div>
 
-        <!-- ТАБЛИЦЯ ЛІДЕРІВ -->
         <div class="card">
             <h2>🏆 Рейтинг пацанів (LIVE Баланс)</h2>
             <table class="leaderboard-table">
@@ -126,6 +121,7 @@
     <script>
         const BASE_URL = 'https://admin67abemo-default-rtdb.europe-west1.firebasedatabase.app';
         let myPlayerId = localStorage.getItem('cyberbet_player_id');
+        let lastBetZoneState = ""; // Захист від стирання інпуту
 
         const playerTiers = {
             "oleksandr": { label: "Tier-S Фаворит", color: "#ffd700" },
@@ -156,7 +152,7 @@
 
             fetch(`${BASE_URL}/.json`).then(res => res.json()).then(data => {
                 if (!data || !data.active_match || !data.active_match.active) { alert("Немає активного матчу!"); return; }
-                if (data.active_match.bets_closed) { alert("⛔ Саня вже закрив ставки на цей матч! Наступного разу став швидше."); return; }
+                if (data.active_match.bets_closed) { alert("⛔ Саня вже закрив ставки на цей матч!"); return; }
                 
                 const player = data.players[myPlayerId];
                 if (!player) { alert("Тебе не знайдено в базі!"); return; }
@@ -174,6 +170,7 @@
                     fetch(`${BASE_URL}/players/${myPlayerId}/current.json`, { method: 'PUT', body: JSON.stringify(newBalance) })
                 ]).then(() => {
                     alert(`🔥 Прийнято! ${amount} PTS на "${teamName}"`);
+                    lastBetZoneState = ""; // Скидаємо стан для негайного перерендеру
                     updateHubView();
                 });
             }).catch(() => alert("Помилка з'єднання з базою при спробі поставити."));
@@ -183,7 +180,6 @@
             fetch(`${BASE_URL}/.json`).then(res => res.json()).then(data => {
                 if(!data) return;
 
-                // Захист: якщо адмін ресетнув базу, а у юзера лишився кукі старого гравця
                 if(myPlayerId && data.players && !data.players[myPlayerId]) {
                     localStorage.removeItem('cyberbet_player_id'); myPlayerId = null; location.reload(); return;
                 }
@@ -224,26 +220,41 @@
                         document.getElementById('live-badge-status').style.background = "var(--accent-red)";
                     }
 
-                    // Оновлення форми для поточного гравця
-                    if(myBet) {
-                        betZone.innerHTML = `<div style="color:var(--accent-green); font-weight:bold; font-size:1.1rem; padding:5px 0;">✅ Твоя ставка прийнята: ${myBet.amount} PTS на "${myBet.teamName}" (Кеф x${myBet.odds})</div>`;
-                    } else if (isClosed) {
-                        betZone.innerHTML = `<div style="color:var(--accent-red); font-weight:bold; font-size:1rem; padding: 10px; border: 1px dashed var(--accent-red); border-radius:6px; background:rgba(255,74,74,0.05);">🔒 Ставки на цю гру закриті адміном! Очікуй результатів.</div>`;
-                    } else {
-                        const myPts = data.players[myPlayerId]?.current || 0;
-                        betZone.innerHTML = `
-                            <div style="display:flex; flex-direction:column; gap:10px; align-items:center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
-                                <div style="font-size:0.95rem; color:var(--text-gray);">Твій доступний баланс: <span style="color:var(--accent-green); font-weight:bold;">${myPts} PTS</span></div>
-                                <input type="number" id="bet-amount-input" placeholder="Сума ставки PTS..." style="background:#000; color:#fff; border:1px solid var(--border-glow); padding:10px; text-align:center; border-radius:6px; width:180px; font-weight:bold; font-size:1rem;">
-                                <div style="display:flex; gap:10px; width:100%; max-width:440px;">
-                                    <button class="btn btn-green" style="flex:1;" onclick="placeBet('team1')">Ставка на Т1</button>
-                                    <button class="btn btn-red" style="flex:1;" onclick="placeBet('team2')">Ставка на Т2</button>
+                    // Визначаємо поточний стан форми
+                    let currentCalculatedState = "form";
+                    if (myBet) currentCalculatedState = "voted";
+                    else if (isClosed) currentCalculatedState = "closed";
+
+                    // Перемальовуємо HTML ТІЛЬКИ якщо стан реально змінився!
+                    if (lastBetZoneState !== currentCalculatedState) {
+                        lastBetZoneState = currentCalculatedState;
+                        
+                        if(currentCalculatedState === "voted") {
+                            betZone.innerHTML = `<div style="color:var(--accent-green); font-weight:bold; font-size:1.1rem; padding:5px 0;">✅ Твоя ставка прийнята: ${myBet.amount} PTS на "${myBet.teamName}" (Кеф x${myBet.odds})</div>`;
+                        } else if (currentCalculatedState === "closed") {
+                            betZone.innerHTML = `<div style="color:var(--accent-red); font-weight:bold; font-size:1rem; padding: 10px; border: 1px dashed var(--accent-red); border-radius:6px; background:rgba(255,74,74,0.05);">🔒 Ставки на цю гру закриті адміном! Очікуй результатів.</div>`;
+                        } else {
+                            betZone.innerHTML = `
+                                <div style="display:flex; flex-direction:column; gap:10px; align-items:center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                                    <div style="font-size:0.95rem; color:var(--text-gray);">Твій доступний баланс: <span id="live-my-balance-text" style="color:var(--accent-green); font-weight:bold;">... PTS</span></div>
+                                    <input type="number" id="bet-amount-input" placeholder="Сума ставки PTS..." style="background:#000; color:#fff; border:1px solid var(--border-glow); padding:10px; text-align:center; border-radius:6px; width:180px; font-weight:bold; font-size:1rem;">
+                                    <div style="display:flex; gap:10px; width:100%; max-width:440px;">
+                                        <button class="btn btn-green" style="flex:1;" onclick="placeBet('team1')">Ставка на Т1</button>
+                                        <button class="btn btn-red" style="flex:1;" onclick="placeBet('team2')">Ставка на Т2</button>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        }
                     }
 
-                    // ОНОВЛЕННЯ ПУБЛІЧНОГО СПИСКУ СТАВОК ДЛЯ ВСІХ
+                    // Оновлюємо виключно текстову цифру балансу, не чіпаючи інпут
+                    if (currentCalculatedState === "form") {
+                        const myPts = data.players[myPlayerId]?.current || 0;
+                        const balText = document.getElementById('live-my-balance-text');
+                        if (balText) balText.textContent = `${myPts} PTS`;
+                    }
+
+                    // ОНОВЛЕННЯ ПУБЛІЧНОГО СПИСКУ СТАВОК
                     const publicBetsBox = document.getElementById('public-bets-list');
                     if(data.active_match.bets && Object.keys(data.active_match.bets).length > 0) {
                         let betsHtml = '';
@@ -262,7 +273,10 @@
                         publicBetsBox.innerHTML = `<div style="text-align:center; color:var(--text-gray); font-size:0.85rem; padding:5px 0;">Ставок на цю катку ще ніхто не зробив.</div>`;
                     }
 
-                } else { document.getElementById('live-match-container').style.display = 'none'; }
+                } else { 
+                    document.getElementById('live-match-container').style.display = 'none'; 
+                    lastBetZoneState = "";
+                }
 
                 // СІТКА ТУРНІРУ
                 if(data.bracket) {
@@ -297,19 +311,4 @@
 
                     sortedPlayers.forEach((p, i) => {
                         const tier = playerTiers[p.id] || { label: "Tier-C Рандом", color: "#ccc" };
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${i+1}</td>
-                                <td><b>${p.name}</b><span class="tier-badge" style="background:${tier.color}; color:#000;">${tier.label}</span><br><span style="font-size:0.75rem;color:var(--text-gray)">@${p.username}</span></td>
-                                <td style="text-align:right; font-weight:bold; color:var(--accent-green)">${p.current} PTS</td>
-                            </tr>`;
-                    });
-                }
-            }).catch(err => console.log("Помилка синхронізації хабу:", err));
-        }
-        
-        updateHubView(); 
-        setInterval(updateHubView, 2000); // Оновлення кожні 2 секунди для швидкого моніторингу ставок
-    </script>
-</body>
-</html>
+                        tbody
