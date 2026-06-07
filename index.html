@@ -46,7 +46,8 @@
         .leaderboard-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
         .leaderboard-table th, .leaderboard-table td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .leaderboard-table th { color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase; }
-        .tier-badge { font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-left: 5px; text-transform: uppercase; }
+        .tier-badge { font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-left: 5px; text-transform: uppercase; display: inline-block; }
+        .kd-badge { font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-left: 5px; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.25); color: var(--accent-gold); display: inline-block; }
         
         .bets-monitor { margin-top: 15px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; text-align: left; border: 1px dashed var(--border-glow); }
         .bet-row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -121,17 +122,18 @@
     <script>
         const BASE_URL = 'https://admin67abemo-default-rtdb.europe-west1.firebasedatabase.app';
         let myPlayerId = localStorage.getItem('cyberbet_player_id');
-        let lastBetZoneState = ""; // Захист від стирання інпуту
+        let lastBetZoneState = ""; 
 
+        // Додано точні КД на основі статистики зі скріншотів Faceit
         const playerTiers = {
-            "oleksandr": { label: "Tier-S Фаворит", color: "#ffd700" },
-            "makaron": { label: "Tier-A Топ-2", color: "#a370f7" },
-            "valik": { label: "Tier-A Топ-2", color: "#a370f7" },
-            "zinko": { label: "Tier-B Спец", color: "#00ffcc" },
-            "misko": { label: "Tier-B Гуд", color: "#00ffcc" },
-            "kolya": { label: "Tier-C Рандом", color: "#ff6b00" },
-            "bodya": { label: "Tier-C Рандом", color: "#ff6b00" },
-            "dzhogolyk": { label: "Tier-D Нуб", color: "#ff4a4a" }
+            "oleksandr": { label: "Tier-S Фаворит", color: "#ffd700", kd: "3.00" },
+            "makaron": { label: "Tier-A Топ-2", color: "#a370f7", kd: "1.31" },
+            "valik": { label: "Tier-A Топ-2", color: "#a370f7", kd: "0.94" },
+            "misko": { label: "Tier-B Гуд", color: "#00ffcc", kd: "1.10" },
+            "zinko": { label: "Tier-B Спец", color: "#00ffcc", kd: "0.57" },
+            "bodya": { label: "Tier-C Рандом", color: "#ff6b00", kd: "0.67" },
+            "kolya": { label: "Tier-C Рандом", color: "#ff6b00", kd: "0.33" },
+            "dzhogolyk": { label: "Tier-D Нуб", color: "#ff4a4a", kd: "0.20" }
         };
 
         function saveProfile() {
@@ -179,7 +181,6 @@
         function updateHubView() {
             fetch(`${BASE_URL}/.json`).then(res => res.json()).then(data => {
                 
-                // ЯКЩО БАЗА ДАНИХ ПОВНІСТЮ ПОРОЖНЯ
                 if(!data) {
                     document.getElementById('user-display-status').innerHTML = 
                         `<span style="color:var(--accent-gold)">⚠️ База порожня! Зайди в адмінку і натисни "Очистити базу та створити сітку".</span>`;
@@ -305,7 +306,7 @@
                     }
                 }
 
-                // РЕЙТИНГ ПАЦАНІВ
+                // РЕЙТИНГ ПАЦАНІВ + ВІДОБРАЖЕННЯ K/D І ТІРІВ
                 if(data.players) {
                     const tbody = document.getElementById('pts-body'); tbody.innerHTML = '';
                     const sortedPlayers = Object.keys(data.players).map(k => {
@@ -313,11 +314,17 @@
                     }).sort((a,b) => b.current - a.current);
 
                     sortedPlayers.forEach((p, i) => {
-                        const tier = playerTiers[p.id] || { label: "Tier-C Рандом", color: "#ccc" };
+                        const tier = playerTiers[p.id] || { label: "Tier-C Рандом", color: "#ccc", kd: "1.00" };
                         tbody.innerHTML += `
                             <tr>
                                 <td>${i+1}</td>
-                                <td><b>${p.name}</b><span class="tier-badge" style="background:${tier.color}; color:#000;">${tier.label}</span><br><span style="font-size:0.75rem;color:var(--text-gray)">@${p.username}</span></td>
+                                <td>
+                                    <b>${p.name}</b>
+                                    <span class="tier-badge" style="background:${tier.color}; color:#000;">${tier.label}</span>
+                                    <span class="kd-badge">🎯 K/D: ${tier.kd}</span>
+                                    <br>
+                                    <span style="font-size:0.75rem;color:var(--text-gray)">@${p.username}</span>
+                                </td>
                                 <td style="text-align:right; font-weight:bold; color:var(--accent-green)">${p.current} PTS</td>
                             </tr>`;
                     });
@@ -330,10 +337,7 @@
             });
         }
 
-        // КЛЮЧОВИЙ ВИПРАВЛЕНИЙ КРОК: Запускаємо хаб одразу при завантаженні сторінки
         updateHubView();
-
-        // Автоматично оновлюємо сторінку кожні 3 секунди, щоб бачити ставки наживо
         setInterval(updateHubView, 3000);
     </script>
 </body>
