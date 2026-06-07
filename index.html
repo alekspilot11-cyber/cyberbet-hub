@@ -17,7 +17,7 @@
         header h1 { font-size: 1.8rem; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px var(--accent-neon); }
         .user-block { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--accent-green); font-weight: bold; }
         
-        .ticker-box { background: #151a22; border: 1px dashed var(--accent-neon); padding: 10px; text-align: center; border-radius: 8px; font-weight: bold; color: var(--accent-gold); display: none; box-shadow: 0 0 10px rgba(163, 112, 247, 0.2); }
+        .ticker-box { background: #151a22; border: 1px dashed var(--accent-neon); padding: 10px; text-align: center; border-radius: 8px; font-weight: bold; color: var(--accent-gold); display: none; }
 
         .card { background: var(--bg-card); border: 1px solid var(--border-glow); border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); position: relative; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent-neon); }
@@ -29,9 +29,11 @@
         .live-team-card { flex: 1; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid var(--border-glow); }
         .odds-display { font-size: 1.6rem; color: var(--accent-gold); margin-top: 8px; font-family: monospace; }
         
-        .btn { border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; text-align: center; font-size: 0.85rem; }
+        .btn { border: none; padding: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; text-align: center; font-size: 0.85rem; transition: 0.2s; }
         .btn-green { background: var(--accent-green); color: #000; }
+        .btn-green:hover { background: #00cc99; }
         .btn-red { background: var(--accent-red); color: #fff; }
+        .btn-red:hover { background: #cc3333; }
 
         .bracket-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
         .match-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border-glow); font-size: 0.95rem; }
@@ -45,6 +47,10 @@
         .leaderboard-table th, .leaderboard-table td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .leaderboard-table th { color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase; }
         .tier-badge { font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-left: 5px; text-transform: uppercase; }
+        
+        .bets-monitor { margin-top: 15px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; text-align: left; border: 1px dashed var(--border-glow); }
+        .bet-row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .bet-row:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -66,31 +72,42 @@
 
         <div class="ticker-box" id="announcement-ticker">📢 <span id="ticker-text">...</span></div>
 
+        <!-- КАРТКА ПОТОЧНОГО LIVE МАТЧУ -->
         <div id="live-match-container" style="display: none;">
             <div class="live-match-box">
                 <span class="live-badge" id="live-badge-status">🔴 LIVE МАТЧ — СТАВКИ ВІДКРИТО</span>
                 <div style="color: var(--accent-gold); font-weight: bold; text-transform: uppercase; font-size: 0.85rem; margin-bottom: 5px;">Мапа: <span id="live-map">-</span></div>
+                
                 <div class="live-teams">
                     <div class="live-team-card" style="border-left: 4px solid var(--accent-green);">
                         <div id="live-t1-name">-</div>
-                        <div class="odds-display" id="live-t1-odds">x1.85</div>
+                        <div class="odds-display" id="live-t1-odds">x1.00</div>
                     </div>
                     <div style="font-size: 1.3rem; color: var(--text-gray);">VS</div>
                     <div class="live-team-card" style="border-right: 4px solid var(--accent-red);">
                         <div id="live-t2-name">-</div>
-                        <div class="odds-display" id="live-t2-odds">x1.85</div>
+                        <div class="odds-display" id="live-t2-odds">x1.00</div>
                     </div>
                 </div>
                 
+                <!-- ЗОНА ДЛЯ ВВЕДЕННЯ СТАВКИ (КНОПКИ ТА ПОЛЯ) -->
                 <div id="betting-form-zone" style="margin-top: 15px; border-top: 1px solid var(--border-glow); padding-top: 15px;"></div>
+                
+                <!-- МОНІТОР ВСІХ СТАВКИ ТУРНІРУ -->
+                <div class="bets-monitor">
+                    <div style="font-weight:bold; color:var(--accent-gold); font-size:0.9rem; text-align:center; margin-bottom:8px; text-transform:uppercase;">📊 Всі ставки пацанів на цей матч:</div>
+                    <div id="public-bets-list">Ставок немає. Спробуй поставити першим!</div>
+                </div>
             </div>
         </div>
 
+        <!-- СІТКА ТУРНІРУ -->
         <div class="card">
-            <h2>📋 Сітка та розклад турніру (<span id="bracket-type-title">Завантаження...</span>)</h2>
+            <h2>📋 Розклад та статус матчів (<span id="bracket-type-title">Завантаження...</span>)</h2>
             <div class="bracket-grid" id="bracket-matches-box"></div>
         </div>
 
+        <!-- ТАБЛИЦЯ ЛІДЕРІВ -->
         <div class="card">
             <h2>🏆 Рейтинг пацанів (LIVE Баланс)</h2>
             <table class="leaderboard-table">
@@ -117,7 +134,7 @@
             "zinko": { label: "Tier-B Спец", color: "#00ffcc" },
             "misko": { label: "Tier-B Гуд", color: "#00ffcc" },
             "kolya": { label: "Tier-C Рандом", color: "#ff6b00" },
-            "bodya": { name: "Бодя", label: "Tier-C Рандом", color: "#ff6b00" },
+            "bodya": { label: "Tier-C Рандом", color: "#ff6b00" },
             "dzhogolyk": { label: "Tier-D Нуб", color: "#ff4a4a" }
         };
 
@@ -128,19 +145,23 @@
                 if(p && p.pin === pin) {
                     localStorage.setItem('cyberbet_player_id', selected); location.reload();
                 } else { alert("Невірний ПІН!"); }
-            });
+            }).catch(() => alert("Помилка авторизації. Перевір базу."));
         }
 
         function placeBet(teamKey) {
-            const amount = parseInt(document.getElementById('bet-amount-input').value);
-            if (!amount || amount <= 0) { alert("Введіть коректну суму!"); return; }
+            const amountInput = document.getElementById('bet-amount-input');
+            if(!amountInput) return;
+            const amount = parseInt(amountInput.value);
+            if (!amount || amount <= 0) { alert("Введіть нормальну суму PTS!"); return; }
 
             fetch(`${BASE_URL}/.json`).then(res => res.json()).then(data => {
-                if (data.active_match && data.active_match.bets_closed) { alert("⛔ Саня вже закрив ставки на цей матч!"); return; }
+                if (!data || !data.active_match || !data.active_match.active) { alert("Немає активного матчу!"); return; }
+                if (data.active_match.bets_closed) { alert("⛔ Саня вже закрив ставки на цей матч! Наступного разу став швидше."); return; }
                 
                 const player = data.players[myPlayerId];
-                if (amount > player.current) { alert("Недостатньо PTS на балансі!"); return; }
-                if (data.active_match.bets && data.active_match.bets[myPlayerId]) { alert("Ти вже зробив ставку на цю катку!"); return; }
+                if (!player) { alert("Тебе не знайдено в базі!"); return; }
+                if (amount > player.current) { alert("У тебе немає стільки PTS!"); return; }
+                if (data.active_match.bets && data.active_match.bets[myPlayerId]) { alert("Ти вже поставив на цю катку!"); return; }
 
                 const odds = teamKey === 'team1' ? data.active_match.team1_odds : data.active_match.team2_odds;
                 const teamName = teamKey === 'team1' ? data.active_match.team1 : data.active_match.team2;
@@ -152,15 +173,20 @@
                     fetch(`${BASE_URL}/active_match/bets/${myPlayerId}.json`, { method: 'PUT', body: JSON.stringify(betData) }),
                     fetch(`${BASE_URL}/players/${myPlayerId}/current.json`, { method: 'PUT', body: JSON.stringify(newBalance) })
                 ]).then(() => {
-                    alert(`🔥 Ставку ${amount} PTS на "${teamName}" успішно прийнято!`);
+                    alert(`🔥 Прийнято! ${amount} PTS на "${teamName}"`);
                     updateHubView();
                 });
-            });
+            }).catch(() => alert("Помилка з'єднання з базою при спробі поставити."));
         }
 
         function updateHubView() {
             fetch(`${BASE_URL}/.json`).then(res => res.json()).then(data => {
                 if(!data) return;
+
+                // Захист: якщо адмін ресетнув базу, а у юзера лишився кукі старого гравця
+                if(myPlayerId && data.players && !data.players[myPlayerId]) {
+                    localStorage.removeItem('cyberbet_player_id'); myPlayerId = null; location.reload(); return;
+                }
 
                 if(!myPlayerId) {
                     const select = document.getElementById('auth-user-select');
@@ -169,6 +195,7 @@
                     }
                     document.getElementById('auth-modal').style.display = 'flex'; return;
                 }
+                document.getElementById('auth-modal').style.display = 'none';
                 document.getElementById('user-display-status').textContent = `Мій акаунт: ${data.players[myPlayerId]?.name || myPlayerId}`;
 
                 if(data.announcement && data.announcement.trim() !== "") {
@@ -176,14 +203,14 @@
                     document.getElementById('ticker-text').textContent = data.announcement;
                 } else { document.getElementById('announcement-ticker').style.display = 'none'; }
 
-                // Рендер зони ставок LIVE
+                // ОБРОБКА LIVE МАТЧУ
                 if(data.active_match && data.active_match.active) {
                     document.getElementById('live-match-container').style.display = 'block';
-                    document.getElementById('live-map').textContent = data.active_match.map;
-                    document.getElementById('live-t1-name').textContent = data.active_match.team1;
-                    document.getElementById('live-t2-name').textContent = data.active_match.team2;
-                    document.getElementById('live-t1-odds').textContent = `x${data.active_match.team1_odds}`;
-                    document.getElementById('live-t2-odds').textContent = `x${data.active_match.team2_odds}`;
+                    document.getElementById('live-map').textContent = data.active_match.map || 'Не вказана';
+                    document.getElementById('live-t1-name').textContent = data.active_match.team1 || 'Команда 1';
+                    document.getElementById('live-t2-name').textContent = data.active_match.team2 || 'Команда 2';
+                    document.getElementById('live-t1-odds').textContent = `x${data.active_match.team1_odds || '1.00'}`;
+                    document.getElementById('live-t2-odds').textContent = `x${data.active_match.team2_odds || '1.00'}`;
 
                     const betZone = document.getElementById('betting-form-zone');
                     const myBet = data.active_match.bets ? data.active_match.bets[myPlayerId] : null;
@@ -197,21 +224,92 @@
                         document.getElementById('live-badge-status').style.background = "var(--accent-red)";
                     }
 
+                    // Оновлення форми для поточного гравця
                     if(myBet) {
-                        betZone.innerHTML = `<div style="color:var(--accent-green); font-weight:bold; font-size:1.1rem;">✅ Твоя ставка: ${myBet.amount} PTS на "${myBet.teamName}" (Кеф x${myBet.odds})</div>`;
+                        betZone.innerHTML = `<div style="color:var(--accent-green); font-weight:bold; font-size:1.1rem; padding:5px 0;">✅ Твоя ставка прийнята: ${myBet.amount} PTS на "${myBet.teamName}" (Кеф x${myBet.odds})</div>`;
                     } else if (isClosed) {
-                        betZone.innerHTML = `<div style="color:var(--accent-red); font-weight:bold; font-size:1.1rem; padding: 10px; border: 1px dashed var(--accent-red); border-radius:6px;">🔒 Ставки на цей матч уже закриті адміністратором!</div>`;
+                        betZone.innerHTML = `<div style="color:var(--accent-red); font-weight:bold; font-size:1rem; padding: 10px; border: 1px dashed var(--accent-red); border-radius:6px; background:rgba(255,74,74,0.05);">🔒 Ставки на цю гру закриті адміном! Очікуй результатів.</div>`;
                     } else {
                         const myPts = data.players[myPlayerId]?.current || 0;
                         betZone.innerHTML = `
-                            <div style="display:flex; flex-direction:column; gap:10px; align-items:center;">
-                                <div style="font-size:0.95rem; color:var(--text-gray);">Твій баланс: <span style="color:var(--accent-green); font-weight:bold;">${myPts} PTS</span></div>
-                                <input type="number" id="bet-amount-input" placeholder="Суму сюди..." style="background:#000; color:#fff; border:1px solid var(--border-glow); padding:10px; text-align:center; border-radius:6px; width:160px; font-weight:bold;">
-                                <div style="display:flex; gap:10px; width:100%; max-width:400px;">
-                                    <button class="btn btn-green" style="flex:1;" onclick="placeBet('team1')">Закинути на Т1</button>
-                                    <button class="btn btn-red" style="flex:1;" onclick="placeBet('team2')">Закинути на Т2</button>
+                            <div style="display:flex; flex-direction:column; gap:10px; align-items:center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                                <div style="font-size:0.95rem; color:var(--text-gray);">Твій доступний баланс: <span style="color:var(--accent-green); font-weight:bold;">${myPts} PTS</span></div>
+                                <input type="number" id="bet-amount-input" placeholder="Сума ставки PTS..." style="background:#000; color:#fff; border:1px solid var(--border-glow); padding:10px; text-align:center; border-radius:6px; width:180px; font-weight:bold; font-size:1rem;">
+                                <div style="display:flex; gap:10px; width:100%; max-width:440px;">
+                                    <button class="btn btn-green" style="flex:1;" onclick="placeBet('team1')">Ставка на Т1</button>
+                                    <button class="btn btn-red" style="flex:1;" onclick="placeBet('team2')">Ставка на Т2</button>
                                 </div>
                             </div>
                         `;
                     }
-                } else { document.getElementById('live-match-container').style.display =
+
+                    // ОНОВЛЕННЯ ПУБЛІЧНОГО СПИСКУ СТАВОК ДЛЯ ВСІХ
+                    const publicBetsBox = document.getElementById('public-bets-list');
+                    if(data.active_match.bets && Object.keys(data.active_match.bets).length > 0) {
+                        let betsHtml = '';
+                        Object.keys(data.active_match.bets).forEach(pId => {
+                            const pName = data.players[pId]?.name || pId;
+                            const b = data.active_match.bets[pId];
+                            const teamColor = b.team === 'team1' ? 'var(--accent-green)' : 'var(--accent-red)';
+                            betsHtml += `
+                                <div class="bet-row">
+                                    <span>👤 <b>${pName}</b></span>
+                                    <span>👉 на <span style="color:${teamColor}; font-weight:bold;">${b.teamName}</span> | <b>${b.amount} PTS</b> (x${b.odds})</span>
+                                </div>`;
+                        });
+                        publicBetsBox.innerHTML = betsHtml;
+                    } else {
+                        publicBetsBox.innerHTML = `<div style="text-align:center; color:var(--text-gray); font-size:0.85rem; padding:5px 0;">Ставок на цю катку ще ніхто не зробив.</div>`;
+                    }
+
+                } else { document.getElementById('live-match-container').style.display = 'none'; }
+
+                // СІТКА ТУРНІРУ
+                if(data.bracket) {
+                    document.getElementById('bracket-type-title').textContent = data.bracket.type === '7players' ? '7 гравців' : '8 гравців з Міськом';
+                    const box = document.getElementById('bracket-matches-box'); box.innerHTML = '';
+                    if(data.bracket.matches) {
+                        data.bracket.matches.forEach(m => {
+                            let statusClass = 'status-waiting', statusText = 'Очікує';
+                            if(m.status === 'live') { statusClass = 'status-live'; statusText = 'ГРАЄТЬСЯ'; }
+                            if(m.status === 'done') { statusClass = 'status-done'; statusText = 'ЗАВЕРШЕНО'; }
+                            box.innerHTML += `
+                                <div class="match-row">
+                                    <div style="display:flex; flex-direction:column; gap:3px;">
+                                        <span style="font-size:0.75rem; color:var(--text-gray); font-weight:bold;">${m.stage}</span>
+                                        <span><b>${m.t1}</b> vs <b>${m.t2}</b></span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:15px;">
+                                        <span class="match-score">${m.score || '0 : 0'}</span>
+                                        <span class="match-status ${statusClass}">${statusText}</span>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                }
+
+                // РЕЙТИНГ ПАЦАНІВ
+                if(data.players) {
+                    const tbody = document.getElementById('pts-body'); tbody.innerHTML = '';
+                    const sortedPlayers = Object.keys(data.players).map(k => {
+                        return { id: k, ...data.players[k] };
+                    }).sort((a,b) => b.current - a.current);
+
+                    sortedPlayers.forEach((p, i) => {
+                        const tier = playerTiers[p.id] || { label: "Tier-C Рандом", color: "#ccc" };
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${i+1}</td>
+                                <td><b>${p.name}</b><span class="tier-badge" style="background:${tier.color}; color:#000;">${tier.label}</span><br><span style="font-size:0.75rem;color:var(--text-gray)">@${p.username}</span></td>
+                                <td style="text-align:right; font-weight:bold; color:var(--accent-green)">${p.current} PTS</td>
+                            </tr>`;
+                    });
+                }
+            }).catch(err => console.log("Помилка синхронізації хабу:", err));
+        }
+        
+        updateHubView(); 
+        setInterval(updateHubView, 2000); // Оновлення кожні 2 секунди для швидкого моніторингу ставок
+    </script>
+</body>
+</html>
