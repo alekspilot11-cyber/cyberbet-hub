@@ -152,7 +152,7 @@
 
             fetch(`${BASE_URL}/.json`).then(res => res.json()).then(data => {
                 if (!data || !data.active_match || !data.active_match.active) { alert("Немає активного матчу!"); return; }
-                if (data.active_match.bets_closed) { alert("⛔ Саня вже закрив ставки на цей матч!"); return; }
+                if (data.active_match.bets_closed) { alert("⛔ Ставки на цей матч уже закриті!"); return; }
                 
                 const player = data.players[myPlayerId];
                 if (!player) { alert("Тебе не знайдено в базі!"); return; }
@@ -170,7 +170,7 @@
                     fetch(`${BASE_URL}/players/${myPlayerId}/current.json`, { method: 'PUT', body: JSON.stringify(newBalance) })
                 ]).then(() => {
                     alert(`🔥 Прийнято! ${amount} PTS на "${teamName}"`);
-                    lastBetZoneState = ""; // Скидаємо стан для негайного перерендеру
+                    lastBetZoneState = ""; 
                     updateHubView();
                 });
             }).catch(() => alert("Помилка з'єднання з базою при спробі поставити."));
@@ -178,7 +178,14 @@
 
         function updateHubView() {
             fetch(`${BASE_URL}/.json`).then(res => res.json()).then(data => {
-                if(!data) return;
+                
+                // ЯКЩО БАЗА ДАНИХ ПОВНІСТЮ ПОРОЖНЯ
+                if(!data) {
+                    document.getElementById('user-display-status').innerHTML = 
+                        `<span style="color:var(--accent-gold)">⚠️ База порожня! Зайди в адмінку і натисни "Очистити базу та створити сітку".</span>`;
+                    document.getElementById('bracket-type-title').textContent = "Помилка";
+                    return;
+                }
 
                 if(myPlayerId && data.players && !data.players[myPlayerId]) {
                     localStorage.removeItem('cyberbet_player_id'); myPlayerId = null; location.reload(); return;
@@ -220,19 +227,17 @@
                         document.getElementById('live-badge-status').style.background = "var(--accent-red)";
                     }
 
-                    // Визначаємо поточний стан форми
                     let currentCalculatedState = "form";
                     if (myBet) currentCalculatedState = "voted";
                     else if (isClosed) currentCalculatedState = "closed";
 
-                    // Перемальовуємо HTML ТІЛЬКИ якщо стан реально змінився!
                     if (lastBetZoneState !== currentCalculatedState) {
                         lastBetZoneState = currentCalculatedState;
                         
                         if(currentCalculatedState === "voted") {
                             betZone.innerHTML = `<div style="color:var(--accent-green); font-weight:bold; font-size:1.1rem; padding:5px 0;">✅ Твоя ставка прийнята: ${myBet.amount} PTS на "${myBet.teamName}" (Кеф x${myBet.odds})</div>`;
                         } else if (currentCalculatedState === "closed") {
-                            betZone.innerHTML = `<div style="color:var(--accent-red); font-weight:bold; font-size:1rem; padding: 10px; border: 1px dashed var(--accent-red); border-radius:6px; background:rgba(255,74,74,0.05);">🔒 Ставки на цю гру закриті адміном! Очікуй результатів.</div>`;
+                            betZone.innerHTML = `<div style="color:var(--accent-red); font-weight:bold; font-size:1rem; padding: 10px; border: 1px dashed var(--accent-red); border-radius:6px; background:rgba(255,74,74,0.05);">🔒 Ставки на цю гру закриті! Очікуй результатів.</div>`;
                         } else {
                             betZone.innerHTML = `
                                 <div style="display:flex; flex-direction:column; gap:10px; align-items:center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
@@ -247,14 +252,12 @@
                         }
                     }
 
-                    // Оновлюємо виключно текстову цифру балансу, не чіпаючи інпут
                     if (currentCalculatedState === "form") {
                         const myPts = data.players[myPlayerId]?.current || 0;
                         const balText = document.getElementById('live-my-balance-text');
                         if (balText) balText.textContent = `${myPts} PTS`;
                     }
 
-                    // ОНОВЛЕННЯ ПУБЛІЧНОГО СПИСКУ СТАВОК
                     const publicBetsBox = document.getElementById('public-bets-list');
                     if(data.active_match.bets && Object.keys(data.active_match.bets).length > 0) {
                         let betsHtml = '';
@@ -311,4 +314,27 @@
 
                     sortedPlayers.forEach((p, i) => {
                         const tier = playerTiers[p.id] || { label: "Tier-C Рандом", color: "#ccc" };
-                        tbody
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${i+1}</td>
+                                <td><b>${p.name}</b><span class="tier-badge" style="background:${tier.color}; color:#000;">${tier.label}</span><br><span style="font-size:0.75rem;color:var(--text-gray)">@${p.username}</span></td>
+                                <td style="text-align:right; font-weight:bold; color:var(--accent-green)">${p.current} PTS</td>
+                            </tr>`;
+                    });
+                }
+
+            }).catch(err => {
+                console.error("Критична помилка:", err);
+                document.getElementById('user-display-status').innerHTML = 
+                    `<span style="color:var(--accent-red); font-weight:bold;">❌ ПОМИЛКА МЕРЕЖІ! Перевір інтернет або правила Rules у Firebase.</span>`;
+            });
+        }
+
+        // КЛЮЧОВИЙ ВИПРАВЛЕНИЙ КРОК: Запускаємо хаб одразу при завантаженні сторінки
+        updateHubView();
+
+        // Автоматично оновлюємо сторінку кожні 3 секунди, щоб бачити ставки наживо
+        setInterval(updateHubView, 3000);
+    </script>
+</body>
+</html>
